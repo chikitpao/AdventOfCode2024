@@ -1,4 +1,4 @@
-""" Advent of Code 2024, Day 1
+""" Advent of Code 2024
     Day 1: Historian Hysteria
     Author: Chi-Kit Pao
     julia --optimize=3 Day01.jl
