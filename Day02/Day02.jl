@@ -65,5 +65,5 @@ end
 # Question 1: How many reports are safe?
 # Answer: 432
 # Question 2: How many reports are now safe?
-# Answer:  488
+# Answer: 488
 #  0.077202 seconds (45.99 k allocations: 2.406 MiB, 95.27% compilation time)
