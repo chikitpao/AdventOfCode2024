@@ -10,97 +10,59 @@ mutable struct Map
     column_count::Int64
 end
 
-function check_coordinates(map_::Map, row::Int64, column::Int64)
-    if row <= 0
-        return false
-    elseif row > map_.row_count
-        return false
-    elseif column <= 0
-        return false
-    elseif column > map_.column_count
-        return false
+function find_xmas_count(map_::Map, row::Int64, column::Int64)::Int64
+    if map_.rows[row][column] != 'X'
+        return 0
     end
-    return true
-end
-
-function find_xmas_count(map_::Map, stack::Vector{Pair{Int64, Int64}}, direction::Int64, retval::Vector{Int64})
-    stack_size = length(stack)
-    @assert stack_size >= 1 && stack_size <= 4
 
     result = 0
-    (row, column) = last(stack)
-    if stack_size == 1 && map_.rows[row][column] != 'X'
-        return
-    elseif stack_size == 2 && map_.rows[row][column] != 'M'
-        return
-    elseif stack_size == 3 && map_.rows[row][column] != 'A'
-        return
-    elseif stack_size == 4
-        if map_.rows[row][column] == 'S'
-            retval[1] += 1
-        end
-        return
-    end
-
     offsets = [Pair(-1, -1), Pair(-1, 0), Pair(-1, 1), Pair(0, -1), Pair(0, 1), 
         Pair(1, -1), Pair(1, 0), Pair(1, 1)]
-    next_steps = direction == -1 ? collect(enumerate(offsets)) : [(direction, offsets[direction])]
-    for (dir, p) ∈ next_steps
-        new_row = row + p[1]
-        new_column = column + p[2]
-        if check_coordinates(map_, new_row, new_column)
-            new_stack = deepcopy(stack)
-            push!(new_stack, Pair(new_row, new_column))
-            find_xmas_count(map_, new_stack, dir, retval)
+    test_value = ['M', 'A', 'S']
+    for p ∈ offsets
+        try
+            current_value = [map_.rows[row + i * p[1]][column + i * p[2]] for i ∈ 1:3]
+            if current_value == test_value
+                result += 1
+            end
+        catch BoundsError
         end
     end
+    return result
 end
 
-function part1(map_::Map)
-    retval = [0]
-    for row ∈ 1:map_.row_count
-        for column ∈ 1:map_.column_count
-            find_xmas_count(map_, [Pair(row, column)], -1, retval)
-        end
-    end
-    return retval[1]
-end
-
-function find_mas_count(map_::Map, row::Int64, column::Int64, retval::Vector{Int64})
+function find_mas_count(map_::Map, row::Int64, column::Int64)::Int64
     if map_.rows[row][column] != 'A'
-        return
+        return 0
     end
     
+    test_value = ['M', 'S']
     try
-        test_value = ['M', 'S']
         diagonal1 = [map_.rows[row-1][column-1], map_.rows[row+1][column+1]]
         sort!(diagonal1)
         if diagonal1 != test_value
-            return
+            return 0
         end
         diagonal2 = [map_.rows[row-1][column+1], map_.rows[row+1][column-1]]
         sort!(diagonal2)
         if diagonal2 != test_value
-            return
+            return 0
         end
-        retval[1] += 1
+        return 1
     catch BoundsError
-        return
+        return 0
     end
 end
 
-function answer(map_::Map, part::Int64)
-    retval = [0]
+function answer(map_::Map, part::Int64)::Int64
+    retval = 0
+    f = (part == 1) ? find_xmas_count : find_mas_count
     for row ∈ 1:map_.row_count
         for column ∈ 1:map_.column_count
-            if part == 1
-                find_xmas_count(map_, [Pair(row, column)], -1, retval)
-            else
-                find_mas_count(map_, row, column, retval)
-            end
+            retval += f(map_, row, column)
         end
     end
-    return retval[1]
+    return retval
 end
 
 function main()
@@ -121,4 +83,4 @@ end
 # Answer: 2642
 # Question 2: How many times does an X-MAS appear?
 # Answer: 1974
-#  0.162051 seconds (406.49 k allocations: 33.541 MiB, 22.68% gc time, 6.11% compilation time)
+#  0.120579 seconds (96.56 k allocations: 4.042 MiB, 5.14% compilation time)
