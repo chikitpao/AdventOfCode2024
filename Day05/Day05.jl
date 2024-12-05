@@ -40,20 +40,20 @@ function part2(pq::PrintQueue)
             ordered = zeros(Int64, length(update))
             for i ∈ 1:length(update)
                 pivot = update[i]
-                violation_count = 0
+                rule_count = 0
                 for j ∈ 1:length(update)
                     if i == j
                         continue
                     end
-                    # Rule violated?
+                    # Conform to rules?
                     if (update[j], pivot) ∈ pq.rules
-                        violation_count += 1
+                        rule_count += 1
                     else
-                        # Conform to rules?
+                        # Conform to rules when swapped positions?
                         @assert (pivot, update[j]) ∈ pq.rules
                     end
                 end
-                ordered[violation_count + 1] = pivot
+                ordered[rule_count + 1] = pivot
             end
             @assert isnothing(findfirst(isequal(0), ordered))
             result += ordered[(length(update) + 1) ÷ 2]
