@@ -62,9 +62,9 @@ function part2(pq::PrintQueue)
     return result
 end
 
-function parse_input(fileName::String)::PrintQueue
+function parse_input(file_name::String)::PrintQueue
     pq = PrintQueue(Set(), Vector())
-    for line in eachline(fileName)
+    for line in eachline(file_name)
         if '|' ∈ line
             a, b = (parse(Int64, d) for d in split(line, "|"))
             push!(pq.rules, (a, b))

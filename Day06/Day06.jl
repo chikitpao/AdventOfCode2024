@@ -12,10 +12,10 @@ mutable struct Map
     rows::Vector{String}
 end
 
-function parse_input(fileName::String)::Map
+function parse_input(file_name::String)::Map
     map_ = Map(Pair{Int64, Int64}(0, 0), UP, Vector{String}())
     found_guard = false
-    map_.rows = readlines(fileName)
+    map_.rows = readlines(file_name)
     for (i, row) ∈ enumerate(map_.rows)
         j = findfirst('^', row)
         if !isnothing(j)
@@ -96,5 +96,5 @@ end
 # Question 1: How many distinct positions will the guard visit before leaving the mapped area?
 # Answer: 5177
 # Question 2: How many different positions could you choose for this obstruction?
-# Answer:  1686
+# Answer: 1686
 #  19.049353 seconds (332.29 M allocations: 23.807 GiB, 5.24% gc time, 0.61% compilation time)
