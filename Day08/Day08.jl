@@ -9,13 +9,10 @@ using DataStructures
 
 mutable struct Antinode
     pos::Pair{Int64, Int64}
-    valid::Bool
-    digit_bits::Int16
-    upper_letter_bits::Int32
-    lower_letter_bits::Int32
 end
 
 mutable struct Map
+    part::Int64
     antennas::SortedDict{Char, Vector{Pair{Int64, Int64}}}
     antinodes::SortedDict{Pair{Int64, Int64}, Antinode}
     rows::Vector{String}
@@ -40,45 +37,47 @@ function check_position(map_::Map, pos::Pair{Int64,Int64})::Bool
 end
 
 function add_antinode(map_::Map, name::Char, pos::Pair{Int64,Int64})
-    antinode = nothing
-    if haskey(map_.antinodes, pos)
-        antinode = map_.antinodes[pos]
-    else
-        antinode = Antinode(pos, false, 0, 0, 0)
-        map_.antinodes[pos] = antinode
-    end
-    if isdigit(name)
-        antinode.digit_bits |= (1 << (Int16(name) - Int16('0')))
-    elseif islowercase(name)
-        antinode.lower_letter_bits |= (1 << (Int32(name) - Int32('a')))
-    elseif isuppercase(name)
-        antinode.upper_letter_bits |= (1 << (Int32(name) - Int32('A')))
+    if !haskey(map_.antinodes, pos)
+        map_.antinodes[pos] = Antinode(pos)
     end
 end
 
 function calculate_antinodes(map_::Map)
     for (name, positions) ∈ pairs(map_.antennas)
+        if length(positions) > 1 && map_.part == 2
+            for p ∈ positions
+                add_antinode(map_, name, deepcopy(p))
+            end
+        end
         for c ∈ combinations(positions, 2)
             # Calculate Antinode positions
             dx = c[2][2] - c[1][2]
             dy = c[2][1] - c[1][1]
             pos1 = Pair(c[1][1] - dy, c[1][2] - dx)
             pos2 = Pair(c[2][1] + dy, c[2][2] + dx)
-            if check_position(map_, pos1)
-                add_antinode(map_, name, pos1)
-            end
-            if check_position(map_, pos2)
-                add_antinode(map_, name, pos2)
+            if map_.part == 1
+                if check_position(map_, pos1)
+                    add_antinode(map_, name, pos1)
+                end
+                if check_position(map_, pos2)
+                    add_antinode(map_, name, pos2)
+                end
+            else
+                while check_position(map_, pos1)
+                    add_antinode(map_, name, deepcopy(pos1))
+                    pos1 = Pair(pos1[1] - dy, pos1[2] - dx)
+                end
+                while check_position(map_, pos2)
+                    add_antinode(map_, name, deepcopy(pos2))
+                    pos2 = Pair(pos2[1] + dy, pos2[2] + dx)
+                end
             end
         end
     end
-    for an ∈ values(map_.antinodes)
-        an.valid = an.digit_bits != 0 || an.lower_letter_bits != 0 || an.upper_letter_bits != 0
-    end
 end
 
-function parse_input(file_name::String)::Map
-    map_ = Map(SortedDict{Char, Vector{Pair{Int64, Int64}}}(), 
+function parse_input(file_name::String, part::Int64)::Map
+    map_ = Map(part, SortedDict{Char, Vector{Pair{Int64, Int64}}}(), 
         SortedDict{Pair{Int64, Int64}, Antinode}(), Vector{String}())
     map_.rows = readlines(file_name)
     for i ∈ 1:length(map_.rows)
@@ -92,24 +91,21 @@ function parse_input(file_name::String)::Map
     return map_
 end
 
-function part1(map_::Map)::Int64
-    result = 0
-    for an ∈ values(map_.antinodes)
-        if an.valid
-            result += 1
-        end
-    end
-    return result
+function answer(map_::Map)::Int64
+    return length(collect(values(map_.antinodes)))
 end
 
 function main()
-    map_ = parse_input("input.txt")
     println("Question 1: How many unique locations within the bounds of the map contain an antinode?")
-    println("Answer: $(part1(map_))")
+    println("Answer: $(answer(parse_input("input.txt", 1)))")
+    println("Question 2: How many unique locations within the bounds of the map contain an antinode?")
+    println("Answer: $(answer(parse_input("input.txt", 2)))")
 end
 
 @time main()
 
 # Question 1: How many unique locations within the bounds of the map contain an antinode?
 # Answer: 254
-#  0.402314 seconds (351.26 k allocations: 16.979 MiB, 99.30% compilation time)
+# Question 2: How many unique locations within the bounds of the map contain an antinode?
+# Answer: 951
+#  0.400880 seconds (373.92 k allocations: 18.169 MiB, 99.09% compilation time)
