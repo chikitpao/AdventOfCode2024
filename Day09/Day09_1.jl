@@ -1,5 +1,5 @@
 """ Advent of Code 2024
-    Day 9: Disk Fragmenter (Part1)
+    Day 9: Disk Fragmenter (Part 1)
     Author: Chi-Kit Pao
     julia --optimize=3 Day09_1.jl
 """
@@ -67,11 +67,11 @@ end
 function main()
     disk = parse_input("input.txt")
     println("Question 1: What is the resulting filesystem checksum?")
-    println("Answer: $(part1(deepcopy(disk)))")
+    println("Answer: $(part1(disk))")
 end
 
 @time main()
 
 # Question 1: What is the resulting filesystem checksum?
 # Answer: 6370402949053
-#  0.096650 seconds (78.08 k allocations: 8.234 MiB, 95.51% compilation time)
+#  0.014426 seconds (30.36 k allocations: 3.847 MiB, 74.15% compilation time)
