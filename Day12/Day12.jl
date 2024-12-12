@@ -68,7 +68,7 @@ function parse_input(file_name::String)::Map
     return map_
 end
 
-function get_properties(map_::Map, area_::Area)::Tuple{Int64,Int64}
+function get_properties1(map_::Map, area_::Area)::Tuple{Int64,Int64}
     perimeter = 0
     for e ∈ area_.area
         (row, column) = e
@@ -93,8 +93,106 @@ function part1(map_::Map)::Int64
     result = 0
     for v ∈ values(map_.areas)
         for a ∈ v
-            (area, perimeter) = get_properties(map_, a)
+            (area, perimeter) = get_properties1(map_, a)
             result += area * perimeter
+        end
+    end
+    return result
+end
+
+mutable struct HLine
+    row::Int64 # row below
+    column1::Int64
+    column2::Int64
+    side::Int64  # 0: upper, 1: lower
+end
+mutable struct VLine
+    row1::Int64
+    row2::Int64
+    column::Int64 # column on the left
+    side::Int64  # 0: left, 1: right
+end
+
+Base.isless(a::HLine, b::HLine) = a.column1 < b.column1
+Base.isless(a::VLine, b::VLine) = a.row1 < b.row1
+
+function get_properties2(map_::Map, area_::Area)::Tuple{Int64,Int64}
+    hdict = Dict{Int64, Vector{HLine}}()
+    vdict = Dict{Int64, Vector{VLine}}()
+    
+    for e ∈ area_.area
+        (row, column) = e
+        c = map_.rows[row][column]
+        if row == 1 || map_.rows[row-1][column] != c
+            if !haskey(hdict, row)
+                hdict[row] = [HLine(row, column, column, 1)]
+            else
+                push!(hdict[row], HLine(row, column, column, 1))
+            end
+        end
+        if row == map_.row_count || map_.rows[row+1][column] != c
+            if !haskey(hdict, row+1)
+                hdict[row+1] = [HLine(row+1, column, column, 0)]
+            else
+                push!(hdict[row+1], HLine(row+1, column, column, 0))
+            end
+        end
+        if column == 1 || map_.rows[row][column-1] != c
+            if !haskey(vdict, column-1)
+                vdict[column-1] = [VLine(row, row, column-1, 1)]
+            else
+                push!(vdict[column-1], VLine(row, row, column-1, 1))
+            end
+        end
+        if  column == map_.column_count || map_.rows[row][column+1] != c
+            if !haskey(vdict, column)
+                vdict[column] =  [VLine(row, row, column, 0)]
+            else
+                push!(vdict[column], VLine(row, row, column, 0))
+            end
+        end
+    end
+    for v ∈ values(hdict)
+        sort!(v)
+        i = 1
+        len = length(v)
+        while i + 1 <= len
+            if (v[i].column2 + 1) == v[i+1].column1 && v[i].side == v[i+1].side
+                v[i].column2 = v[i+1].column2
+                deleteat!(v, i+1)
+                len -= 1
+                # i remains the same
+            else
+                i += 1
+            end
+        end
+    end
+    for v ∈ values(vdict)
+        sort!(v)
+        i = 1
+        len = length(v)
+        while i + 1 <= len
+            if (v[i].row2 + 1) == v[i+1].row1 && v[i].side == v[i+1].side
+                v[i].row2 = v[i+1].row2
+                deleteat!(v, i+1)
+                len -= 1
+                # i remains the same
+            else
+                i += 1
+            end
+        end
+    end
+    hsides = sum([length(v) for v ∈ values(hdict)])
+    vsides = sum([length(v) for v ∈ values(vdict)])
+    return (length(area_.area), hsides + vsides)
+end
+
+function part2(map_::Map)::Int64
+    result = 0
+    for v ∈ values(map_.areas)
+        for a ∈ v
+            (area, sides) = get_properties2(map_, a)
+            result += area * sides
         end
     end
     return result
@@ -104,11 +202,14 @@ function main()
     map_ = parse_input("input.txt")
     println("Question 1: What is the total price of fencing all regions on your map?")
     println("Answer: $(part1(map_))")
+    println("Question 2: What is the new total price of fencing all regions on your map?")
+    println("Answer: $(part2(map_))")
 end
 
 @time main()
 
 # Question 1: What is the total price of fencing all regions on your map?
 # Answer: 1473408
-#   0.120849 seconds (15.91 k allocations: 10.744 MiB, 12.68% compilation time)
-
+# Question 2: What is the new total price of fencing all regions on your map?
+# Answer: 886364
+#  0.126548 seconds (57.15 k allocations: 13.172 MiB, 4.46% gc time, 11.94% compilation time)
