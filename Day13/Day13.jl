@@ -1,5 +1,5 @@
 """ Advent of Code 2024
-    Day 13: Day 13: Claw Contraption
+    Day 13: Claw Contraption
     Author: Chi-Kit Pao
     julia --optimize=3 Day13.jl
 """
