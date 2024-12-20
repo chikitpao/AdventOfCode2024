@@ -40,14 +40,19 @@ mutable struct Map
     end_node::Union{Nothing, Node}
     nodes::Dict{Pos, Node}
     walls::Set{Pos}
+    length_::Int64
+    last_byte::String
 end
 function Map()::Map
-    return Map(nothing, nothing, Dict{Pos, Vector{Union{Nothing, Node}}}(), Set{Pos}())
+    return Map(nothing, nothing, Dict{Pos, Vector{Union{Nothing, Node}}}(), Set{Pos}(), 0, "")
 end
 
+# input -> out parameter
 function parse_input(file_name::String, length_::Int64)::Map
     rows = readlines(file_name)
     map_ = Map()
+    map_.length_ = length_
+    map_.last_byte = rows[length_]
     row_count = 71
     column_count = 71
     field = zeros(Int64, (row_count, column_count))
@@ -81,7 +86,7 @@ function parse_input(file_name::String, length_::Int64)::Map
     return map_
 end
 
-function part1(map_::Map)::Int64
+function get_steps(map_::Map)::Int64
     map_.start_node.visit_state = VISITING
     visiting = [map_.start_node]
     while !isempty(visiting)
@@ -89,6 +94,7 @@ function part1(map_::Map)::Int64
         current_node = popat!(visiting, min_index)
         current_node.visit_state = VISITED
         if current_node == map_.end_node
+            println("Exit found for $(map_.length_) steps.")
             return current_node.distance
         end
 
@@ -109,17 +115,50 @@ function part1(map_::Map)::Int64
             end
         end
     end
+    println("No exit for $(map_.length_) steps. Last Byte: $(map_.last_byte)")
     return -1
 end
 
 function main()
     println("Question 1: What is the minimum number of steps needed to reach the exit?")
     map_ = parse_input("input.txt", 1024)
-    println("Answer: $(part1(map_))")
+    println("Answer: $(get_steps(map_))")
+
+    println("Question 2: What are the coordinates of the first byte that will prevent the exit from being reachable from your starting position?")
+    # Find the desired step count by bisection
+    #
+    # Last output lines:
+    # average: 3037, lower: 3034, upper: 3041
+    # No exit for 3035 steps. Last Byte: 5,60
+    # average: 3035, lower: 3034, upper: 3036
+    # Exit found for 3034 steps.
+    # average: 3034, lower: 3034, upper: 3034
+    # => Answer: 5,60
+    boundaries = [1025, 3450]
+    while boundaries[2] >= boundaries[1]
+        average = (boundaries[2] + boundaries[1]) ÷ 2
+        map_ = parse_input("input.txt", average)
+        steps = get_steps(map_)
+        println("average: $average, lower: $(boundaries[1]), upper: $(boundaries[2])")
+        changed = false
+        if steps == -1
+            changed = boundaries[2] != (average - 1)
+            boundaries[2] = (average - 1)
+        else
+            changed = boundaries[1] != (average + 1)
+            boundaries[1] = (average + 1)
+        end
+        if !changed
+            break
+        end
+    end
 end
 
 @time main()
 
 # Question 1: What is the minimum number of steps needed to reach the exit?
 # Answer: 252
-#  0.008973 seconds (26.80 k allocations: 2.024 MiB, 62.50% compilation time)
+# Question 2: What are the coordinates of the first byte that will prevent the exit from being reachable from your starting position?
+# Answer: 5,60
+#  0.049011 seconds (237.75 k allocations: 21.649 MiB, 11.20% gc time, 11.21% compilation time)
+
