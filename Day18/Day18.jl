@@ -44,10 +44,9 @@ mutable struct Map
     last_byte::String
 end
 function Map()::Map
-    return Map(nothing, nothing, Dict{Pos, Vector{Union{Nothing, Node}}}(), Set{Pos}(), 0, "")
+    return Map(nothing, nothing, Dict{Pos, Node}(), Set{Pos}(), 0, "")
 end
 
-# input -> out parameter
 function parse_input(file_name::String, length_::Int64)::Map
     rows = readlines(file_name)
     map_ = Map()
