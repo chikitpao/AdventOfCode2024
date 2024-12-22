@@ -4,6 +4,9 @@
     julia --optimize=3 Day20.jl
 """
 
+
+using Combinatorics
+
 const EMPTY = '.'
 const START = 'S'
 const END = 'E'
@@ -151,6 +154,8 @@ function undo_cheat(map_::Map, cheat::Union{Nothing, Node})
 end
 
 function get_steps(map_::Map, cheat::Union{Nothing, Node})::Int64
+    # Find shortest path via Dijksta's. Apply cheat (= remove wall) if it is
+    # specified.
     reset(map_)
     visiting = [map_.start_node]
     apply_cheat(map_, cheat)
@@ -185,20 +190,54 @@ function get_steps(map_::Map, cheat::Union{Nothing, Node})::Int64
     return -1
 end
 
+function part22(map_::Map, min_saved::Int64)
+    result = 0
+    # Try all combinations with two empty nodes.
+    node_list = collect(values(map_.nodes))
+    # Sort list to ensure src.distance < dst.distance.
+    sort!(node_list, by=(n -> n.distance))
+    for (src, dst) ∈ combinations(node_list, 2)
+        @assert src.distance < dst.distance
+        # Increment result if nodes are up to 20 apart and using shortcut will save time
+        distance_between = abs(dst.pos.row - src.pos.row) + abs(dst.pos.column - src.pos.column)
+        if distance_between <= 20
+            if dst.distance - src.distance - distance_between >= min_saved
+                result += 1
+            end
+        end
+    end
+    return result
+end
+
 function main()
     println("Question 1: How many cheats would save you at least 100 picoseconds?")
-    map_ = parse_input("input.txt")
+    test = false
+    file_name = test ? "testinput.txt" : "input.txt"
+    min_saved = test ? 50 : 100
+    map_ = parse_input(file_name)
     steps_needed_orig = get_steps(map_, nothing)
-    steps_saved = []
+    steps_saved = Vector{Int64}()
     for cheat ∈ map_.cheats
         push!(steps_saved, steps_needed_orig - get_steps(map_, cheat))
     end
-    answer1 = count(x -> x >= 100, steps_saved)
+    answer1 = count(x -> x >= min_saved, steps_saved)
     println("Answer: $answer1")
+    
+    println("Question 2: How many cheats would save you at least 100 picoseconds?")
+    # If this condition is true, there is only a single path from start to end.
+    # The algorithm for part 2 only works when under this condition.
+    @assert steps_needed_orig == (length(values(map_.nodes)) - 1)
+    map_ = parse_input(file_name)
+    steps_needed_orig = get_steps(map_, nothing)
+    # The nodes will have the distance value from start.
+    answer2 = part2(map_, min_saved)
+    println("Answer: $answer2")
 end
 
 @time main()
 
 # Question 1: How many cheats would save you at least 100 picoseconds?
 # Answer: 1445
-#  1.892123 seconds (112.96 k allocations: 6.573 MiB, 0.52% compilation time)
+# Question 2: How many cheats would save you at least 100 picoseconds?
+# Answer: 1008040
+#  4.201665 seconds (133.65 M allocations: 4.652 GiB, 7.10% gc time, 0.13% compilation time)
