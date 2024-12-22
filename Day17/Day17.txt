@@ -1,0 +1,17 @@
+Program: 2,4,1,1,7,5,1,5,4,1,5,5,0,3,3,0
+Index: 	 0 1 2 3 4 5 6 7 8 9101112131415
+
+bst regA	; 2,4: regA % 8 -> regB
+bxl 1		; 1,1: regB xor 1 -> regB
+cdv regB	; 7,5: regA div 2^regB -> regC
+bxl 5		; 1,5: regB xor 5 -> regB
+bxc			; 4,1: regB xor regC -> regB
+out regB	; 5,5: output (regB % 8)
+adv 3		; 0,3: regA div 2^3 -> regA
+jnz 0		; 3,0: jump to 0 if regA not 0 
+
+REMARKS:
+Program ends when regA is 0 at the last line.
+regA only changes at division on the second last line.
+regB get its initial value at command bst.
+regC only changes at command cdv.
