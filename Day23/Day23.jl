@@ -43,15 +43,52 @@ function part1(connections::Connections)::Int64
     return result
 end
 
+function part2(connections::Connections)::String
+    dd = Dict{String, Vector{String}}()
+    for connection ∈ connections.connections
+        if !haskey(dd, connection[1])
+            dd[connection[1]] = [connection[1], connection[2]]
+        else
+            push!(dd[connection[1]], connection[2])
+        end
+        if !haskey(dd, connection[2])
+            dd[connection[2]] = [connection[2], connection[1]]
+        else
+            push!(dd[connection[2]], connection[1])
+        end
+    end
+    results = []
+    remaining = 12
+    # No result for remaining = 13 but result for remaining = 12
+    for (k, v) ∈ dd
+        max_set = dd[k]
+        for intersection_set ∈ combinations(max_set[2:end], remaining)
+            intersection_set2 = append!([k], intersection_set)
+            for vv ∈ intersection_set
+                intersection_set2 = intersect(intersection_set2, dd[vv])
+            end
+            if length(intersection_set2) == length(intersection_set) + 1
+                push!(results, intersection_set2)
+            end
+        end
+    end
+    @assert length(results) == remaining + 1
+    return join(sort!(results[1]),",")
+end
+
 function main()
     connections = parse_input("input.txt")
     
     println("Question 1: How many sets of three inter-connected computers contain at least one computer with a name that starts with t?")
     println("Answer: $(part1(connections))")
+    println("Question 2: What is the password to get into the LAN party?")
+    println("Answer: $(part2(connections))")
 end
 
 @time main()
 
-# Question 1:  How many sets of three inter-connected computers contain at least one computer with a name that starts with t?
+# Question 1: How many sets of three inter-connected computers contain at least one computer with a name that starts with t?
 # Answer: 1098
-#  1.173640 seconds (69.93 M allocations: 2.432 GiB, 7.28% gc time, 2.14% compilation time)
+# Question 2: What is the password to get into the LAN party?
+# Answer: ar,ep,ih,ju,jx,le,ol,pk,pm,pp,xf,yu,zg
+#   1.309821 seconds (70.82 M allocations: 2.522 GiB, 4.96% gc time, 2.58% compilation time)
