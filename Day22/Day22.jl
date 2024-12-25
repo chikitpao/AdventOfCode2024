@@ -25,7 +25,7 @@ function part1(numbers::Vector{Int64})::Int64
     return sum(map(n -> last(process(n)), numbers))
 end
 
-all_offer_keys = Set{Tuple{Int64,Int64,Int64,Int64}}()
+all_offers = Dict{Tuple{Int64,Int64,Int64,Int64}, Int64}()
 
 struct Buyer
     secret_numbers::Vector{Int64}
@@ -43,31 +43,22 @@ function Buyer(secret_numbers::Vector{Int64})
         if !haskey(offers, key)
             offers[key] = prices[i+3]
             global all_offer_keys
-            push!(all_offer_keys, key)
+            if !haskey(all_offers, key)
+                all_offers[key] = prices[i+3]
+            else
+                all_offers[key] += prices[i+3]
+            end
         end
     end
     return Buyer(secret_numbers, prices, differences, offers)
 end
 
 function part2(numbers::Vector{Int64})::Int64
-    buyers = Vector{Buyer}()
     for number ∈ numbers
-        push!(buyers, Buyer(process(number)))
+        _ = Buyer(process(number))
     end
 
-    max_bananas = 0
-    for key ∈ all_offer_keys
-        bananas = 0
-        for buyer ∈ buyers
-            try
-                bananas += buyer.offers[key]
-            catch KeyError
-            end
-        end
-        max_bananas = max(max_bananas, bananas)
-    end
-
-    return max_bananas
+    return maximum(values(all_offers))
 end
 
 function main()
@@ -86,4 +77,4 @@ end
 # Answer: 15006633487
 # Question 2: What is the most bananas you can get?
 # Answer: 1710
-#  191.881866 seconds (218.30 M allocations: 8.302 GiB, 0.27% gc time, 0.08% compilation time)
+#  2.352089 seconds (11.91 M allocations: 1.103 GiB, 6.62% gc time, 2.93% compilation time)
