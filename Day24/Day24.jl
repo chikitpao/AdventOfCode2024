@@ -1,7 +1,7 @@
 """ Advent of Code 2024
-    Day 23: LAN Party
+    Day 24: Crossed Wires
     Author: Chi-Kit Pao
-    julia --optimize=3 Day23.jl
+    julia --optimize=3 Day24.jl
 """
 
 
