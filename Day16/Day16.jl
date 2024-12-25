@@ -59,7 +59,7 @@ end
 
 function get_direction_bits(rows::Vector{String}, row::Int64, column::Int64)::Int64
     result = 0 
-    @assert rows[row][column] ∈ (EMPTY, START)
+    @assert rows[row][column] ∈ (EMPTY, START, END)
     for i ∈ 1:4
         new_row = row + offsets[i].row
         new_column = column + offsets[i].column
@@ -116,8 +116,8 @@ function parse_input(file_name::String)::Map
                 end
             elseif c == END
                 map_.end_pos = pos
-                # No connections from end node
-                map_.end_node = Node(Pos(i, j), 0, NO_DIR)
+                directions = get_direction_bits(rows, i, j)
+                map_.end_node = Node(Pos(i, j), directions, NO_DIR)
                 map_.nodes[pos] = [map_.end_node]
             else
                 push!(map_.wall, pos)
@@ -194,9 +194,6 @@ function part1(map_::Map)::Int64
 
         for (i, index) ∈ enumerate(indices)
             next_node = current_node.connections[index]
-            if !isnothing(next_node) && current_node.pos == (7, 10)
-                println("next $(next_node.pos)")
-            end
             if isnothing(next_node) || next_node.visit_state == VISITED
                 continue
             end
@@ -211,20 +208,101 @@ function part1(map_::Map)::Int64
                 next_node.previousNode = current_node
             end
         end
-        # println("length $(length(visiting))")
     end
     return -1
 end
 
-function main()
-    map_ = parse_input("input.txt")
+function part2(mapf::Map, mapb::Map, best_score::Int64)::Int64
+    indices = [6, 1, 2, 3, 4, 5, 7]
+    distances = [0.0, 1.0, 1.0, 1.0, 1.0, 1000.0, 1000.0]
+    
+    # Dijkstra forward, but visit all nodes.
+    mapf.start_node.visit_state = VISITING
+    visiting = [mapf.start_node]
+    while !isempty(visiting)
+        (_, min_index) = findmin(n -> n.distance, visiting)
+        current_node = popat!(visiting, min_index)
+        current_node.visit_state = VISITED
+        for (i, index) ∈ enumerate(indices)
+            next_node = current_node.connections[index]
+            if isnothing(next_node) || next_node.visit_state == VISITED
+                continue
+            end
+            next_distance = current_node.distance + distances[i]
+            if next_node.visit_state == UNVISITED
+                next_node.visit_state = VISITING
+                push!(visiting, next_node)
+                next_node.distance = next_distance
+                next_node.previousNode = current_node
+            elseif next_distance < next_node.distance
+                next_node.distance = next_distance
+                next_node.previousNode = current_node
+            end
+        end
+    end
 
+    # Dijkstra backward, but visit all nodes.
+    mapb.start_node.distance = Inf64
+    mapb.end_node.distance = 0.0
+    mapb.end_node.visit_state = VISITING
+    visiting = [mapb.end_node]
+    while !isempty(visiting)
+        (_, min_index) = findmin(n -> n.distance, visiting)
+        current_node = popat!(visiting, min_index)
+        current_node.visit_state = VISITED
+        for (i, index) ∈ enumerate(indices)
+            next_node = current_node.connections[index]
+            if isnothing(next_node) || next_node.visit_state == VISITED
+                continue
+            end
+            next_distance = current_node.distance + distances[i]
+            if next_node.visit_state == UNVISITED
+                next_node.visit_state = VISITING
+                push!(visiting, next_node)
+                next_node.distance = next_distance
+                next_node.previousNode = current_node
+            elseif next_distance < next_node.distance
+                next_node.distance = next_distance
+                next_node.previousNode = current_node
+            end
+        end
+    end
+    
+    # Traverse through all nodes (same pos and fromDirection), add its minimum
+    # score from the start and from the end. If the sum is the same as the best 
+    # score from part 1, then this node also lies on one of the best paths.
+    pos_set = Set{Pos}()
+    for (nv1, nv2) ∈ zip(values(mapf.nodes), values(mapb.nodes))
+        for (n1, n2) ∈ zip(nv1, nv2)
+            if !isnothing(n1)
+                if n1.distance + n2.distance == best_score
+                    push!(pos_set, n1.pos)
+                end
+            end
+        end
+    end
+    return length(pos_set)
+end
+
+function main()
+    file_name = "input.txt"
+    map_ = parse_input(file_name)
     println("Question 1: What is the lowest score a Reindeer could possibly get?")
-    println("Answer: $(part1(map_))")
+    answer1 = part1(map_)
+    println("Answer: $answer1")
+    
+    map_ = nothing
+    mapf = parse_input(file_name)
+    mapb = parse_input(file_name)
+    println("Question 2: How many tiles are part of at least one of the best paths through the maze?")
+    println("Answer: $(part2(mapf, mapb, answer1))")
+    
 end
 
 @time main()
 
 # Question 1: What is the lowest score a Reindeer could possibly get?
 # Answer: 106512
-#  0.194854 seconds (447.77 k allocations: 23.439 MiB, 2.86% gc time, 85.05% compilation time)
+# Question 2: How many tiles are part of at least one of the best paths through the maze?
+# Answer: 563
+#  0.216780 seconds (668.29 k allocations: 35.935 MiB, 5.49% gc time, 75.78% compilation time)
